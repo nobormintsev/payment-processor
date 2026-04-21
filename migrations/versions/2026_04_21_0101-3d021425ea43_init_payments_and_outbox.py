@@ -1,7 +1,7 @@
 """init payments and outbox
 
 Revision ID: 3d021425ea43
-Revises: 
+Revises:
 Create Date: 2026-04-21 01:01:42.749974
 
 """

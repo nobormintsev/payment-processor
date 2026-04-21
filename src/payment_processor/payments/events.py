@@ -3,9 +3,8 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
-
 from payments.enums import Currency
+from pydantic import BaseModel, Field
 
 
 class PaymentCreatedV1(BaseModel):

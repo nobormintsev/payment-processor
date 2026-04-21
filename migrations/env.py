@@ -1,17 +1,15 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-
 from payment_processor.core.config import settings
 from payment_processor.database.base import Base
-
-from payment_processor.payments.models import Payment  # noqa: F401
 from payment_processor.outbox.models import OutboxMessage  # noqa: F401
+from payment_processor.payments.models import Payment  # noqa: F401
 
 config = context.config
 

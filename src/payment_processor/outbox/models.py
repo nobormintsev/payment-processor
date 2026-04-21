@@ -4,8 +4,8 @@ from sqlalchemy import BigInteger, DateTime, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from payment_processor.outbox.enums import OutboxStatus
 from payment_processor.database.base import Base
+from payment_processor.outbox.enums import OutboxStatus
 
 
 class OutboxMessage(Base):

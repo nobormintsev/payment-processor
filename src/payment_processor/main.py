@@ -1,6 +1,7 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
+from core.handlers import register_exception_handlers
 from fastapi import FastAPI
 
 from payment_processor.database.session import dispose_engine
@@ -17,5 +18,5 @@ app = FastAPI(
     title="Payment Processor",
     lifespan=lifespan,
 )
-
+register_exception_handlers(app)
 app.include_router(payments_router, prefix="/api/v1")
