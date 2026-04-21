@@ -63,6 +63,9 @@ ignore = [
     "E501",   # line too long
     "S101",   # assert (тесты)
     "B008",   # FastAPI Depends/Header
+    "RUF001",  # ambiguous-unicode-character-string
+    "RUF002",  # ambiguous-unicode-character-docstring
+    "RUF003",  # ambiguous-unicode-character-comment
 ]
 
 [tool.ruff.lint.per-file-ignores]
