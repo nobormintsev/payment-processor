@@ -27,3 +27,52 @@ packages = [{ include = "payment_processor", from = "src" }]
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.15.11,<0.16.0)",
+    "pre-commit (>=4.5.1,<5.0.0)"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+src = ["src"]
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes (неиспользуемые импорты и т.п.)
+    "I",      # isort (сортировка импортов)
+    "N",      # pep8-naming
+    "UP",     # pyupgrade (переход на новый синтаксис)
+    "B",      # bugbear (типичные баги)
+    "ASYNC",  # async-специфичные проверки
+    "S",      # bandit (security)
+    "C4",     # comprehensions
+    "SIM",    # simplify
+    "RUF",    # ruff-специфичные
+    "TCH",    # type-checking
+    "PIE",    # misc lints
+    "RET",    # return statements
+    "T20",    # print statements
+]
+ignore = [
+    "E501",   # line too long
+    "S101",   # assert (тесты)
+    "B008",   # FastAPI Depends/Header
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # assert и хардкод паролей в тестах
+"migrations/versions/*.py" = ["I001", "N999"]  # alembic-style миграции
+
+[tool.ruff.lint.isort]
+known-first-party = ["payment_processor"]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
