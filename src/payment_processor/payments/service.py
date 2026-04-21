@@ -1,9 +1,9 @@
-from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from payment_processor.core.time import utcnow
 from payment_processor.outbox.models import OutboxMessage
 from payment_processor.outbox.repository import OutboxRepository
 from payment_processor.payments.enums import PaymentStatus
@@ -37,6 +37,7 @@ class PaymentService:
 
         # Создаём платёж и событие в одной транзакции
         payment = Payment(
+            id=uuid4(),
             idempotency_key=idempotency_key,
             amount=data.amount,
             currency=data.currency,
@@ -48,7 +49,7 @@ class PaymentService:
         self._payments.add(payment)
 
         event = PaymentCreatedV1(
-            occurred_at=datetime.now(UTC),
+            occurred_at=utcnow(),
             payment_id=payment.id,
             amount=payment.amount,
             currency=payment.currency,
