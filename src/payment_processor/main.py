@@ -1,11 +1,11 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from core.config import settings
-from core.logging import configure_logging
 from fastapi import FastAPI
 
+from payment_processor.core.config import settings
 from payment_processor.core.exception_handlers import register_exception_handlers
+from payment_processor.core.logging import configure_logging
 from payment_processor.database.session import dispose_engine
 from payment_processor.payments.router import router as payments_router
 

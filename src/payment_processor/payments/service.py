@@ -86,9 +86,7 @@ class PaymentService:
 
     @staticmethod
     def _matches_request(payment: Payment, data: CreatePaymentRequest) -> bool:
-        """
-        Проверка, что повторный запрос с тем же idempotency-key имеет то же тело.
-        """
+        """Проверяет, что повторный запрос с тем же idempotency-key имеет то же тело."""
         return (
             payment.amount == data.amount
             and payment.currency == data.currency
