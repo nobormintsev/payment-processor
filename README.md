@@ -65,7 +65,25 @@ curl http://localhost:8000/api/v1/payments/<payment_id> \
   -H "X-API-Key: local-dev-secret-change-me"
 ```
 
-Что приходит в webhook:
+Ответ:
+
+```json
+{
+  "id": "e0254f04-c2d8-45a1-8337-c7c887205bde",
+  "amount": "1.00",
+  "currency": "RUB",
+  "description": "string",
+  "metadata": {
+    "additionalProp1": {}
+  },
+  "status": "succeeded",
+  "webhook_url": "https://webhook.site/e260d3d6-b745-4436-b639-445a878635bd",
+  "created_at": "2026-04-23T09:59:11.638329Z",
+  "processed_at": "2026-04-23T09:59:14.420792Z"
+}
+```
+
+### Что приходит в webhook:
 
 ```json
 {
