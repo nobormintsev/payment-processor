@@ -15,3 +15,15 @@ class IdempotencyConflictError(ConflictError):
             f"Idempotency key '{idempotency_key}' conflicts with existing request",
         )
         self.idempotency_key = idempotency_key
+
+
+class WebhookError(Exception):
+    pass
+
+
+class RetriableWebhookError(WebhookError):
+    pass
+
+
+class PermanentWebhookError(WebhookError):
+    pass

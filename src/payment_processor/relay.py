@@ -2,10 +2,10 @@ import asyncio
 import logging
 import signal
 
-from payment_processor.broker import broker
 from payment_processor.core.config import settings
 from payment_processor.core.logging import configure_logging
 from payment_processor.database.session import engine, session_factory
+from payment_processor.messaging.broker import broker, declare_topology
 from payment_processor.outbox.relay import OutboxRelay
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ async def main() -> None:
     logger.info("Starting relay process")
 
     await broker.connect()
+    await declare_topology(broker)
     logger.info("Connected to broker")
 
     relay = OutboxRelay(
@@ -23,6 +24,7 @@ async def main() -> None:
         broker=broker,
         poll_interval=settings.outbox.poll_interval_seconds,
         batch_size=settings.outbox.batch_size,
+        max_publish_attempts=settings.outbox.max_publish_attempts,
     )
 
     loop = asyncio.get_running_loop()

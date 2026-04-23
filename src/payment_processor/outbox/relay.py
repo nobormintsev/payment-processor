@@ -5,7 +5,7 @@ from contextlib import suppress
 from faststream.rabbit import RabbitBroker
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from payment_processor.broker import payments_exchange
+from payment_processor.messaging.broker import RK_NEW, payments_exchange
 from payment_processor.outbox.models import OutboxMessage
 from payment_processor.outbox.repository import OutboxRepository
 
@@ -26,11 +26,13 @@ class OutboxRelay:
         broker: RabbitBroker,
         poll_interval: float,
         batch_size: int,
+        max_publish_attempts: int,
     ) -> None:
         self._session_factory = session_factory
         self._broker = broker
         self._poll_interval = poll_interval
         self._batch_size = batch_size
+        self._max_publish_attempts = max_publish_attempts
         self._stop_event = asyncio.Event()
 
     async def run(self) -> None:
@@ -50,25 +52,33 @@ class OutboxRelay:
     async def _process_batch(self) -> int:
         async with self._session_factory() as session, session.begin():
             repo = OutboxRepository(session)
-            batch = await repo.acquire_batch_for_publishing(self._batch_size)
+            batch = await repo.acquire_batch_for_publishing(
+                self._batch_size,
+                self._max_publish_attempts,
+            )
 
             if not batch:
                 return 0
 
             sent_ids: list[int] = []
+            failed = 0
             for message in batch:
                 try:
                     await self._publish(message)
                     sent_ids.append(message.id)
                 except Exception as exc:
+                    failed += 1
                     logger.exception(
-                        "Failed to publish outbox message id=%s",
+                        "Failed to publish outbox message id=%s (attempt %s/%s)",
                         message.id,
+                        message.attempts + 1,
+                        self._max_publish_attempts,
                     )
-                    await repo.mark_as_failed(
-                        message.id,
+                    await repo.record_publish_failure(
+                        message_id=message.id,
                         error=str(exc),
                         attempts=message.attempts + 1,
+                        max_attempts=self._max_publish_attempts,
                     )
 
             if sent_ids:
@@ -77,7 +87,7 @@ class OutboxRelay:
             logger.info(
                 "Processed outbox batch: %s sent, %s failed",
                 len(sent_ids),
-                len(batch) - len(sent_ids),
+                failed,
             )
             return len(batch)
 
@@ -85,11 +95,12 @@ class OutboxRelay:
         await self._broker.publish(
             message=message.payload,
             exchange=payments_exchange,
-            routing_key="payments.new",
+            routing_key=RK_NEW,
             headers={
                 "event_type": message.event_type,
                 "outbox_message_id": str(message.id),
             },
+            persist=True,
         )
 
     async def _sleep_or_stop(self, seconds: float) -> None:

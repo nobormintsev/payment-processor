@@ -1,7 +1,7 @@
-from pydantic import Field, SecretStr
+from pydantic import Field, PositiveFloat, PositiveInt, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from payment_processor.core.enums import Environment, LogLevel
+from payment_processor.core.enums import LogLevel
 
 
 class DatabaseSettings(BaseSettings):
@@ -13,7 +13,7 @@ class DatabaseSettings(BaseSettings):
     )
 
     host: str
-    port: int = 5432
+    port: PositiveInt = 5432
     user: str
     password: SecretStr
     db: str
@@ -35,7 +35,7 @@ class RabbitSettings(BaseSettings):
     )
 
     host: str
-    port: int = 5672
+    port: PositiveInt = 5672
     user: str
     password: SecretStr
     vhost: str = "/"
@@ -56,14 +56,15 @@ class PaymentsSettings(BaseSettings):
         extra="ignore",
     )
 
-    processing_min_seconds: float = 2.0
-    processing_max_seconds: float = 5.0
-    success_rate: float = 0.9
+    processing_min_seconds: PositiveFloat = 2.0
+    processing_max_seconds: PositiveFloat = 5.0
+    success_rate: PositiveFloat = 0.9
 
-    webhook_timeout_seconds: float = 5.0
-    webhook_max_retries: int = 3
+    webhook_timeout_seconds: PositiveFloat = 5.0
+    webhook_max_retries: PositiveInt = 3
 
-    consumer_max_retries: int = 3
+    # TTL retry-очередей - длина = лимит попыток до DLQ
+    retry_schedule_ms: tuple[PositiveInt, ...] = (1_000, 5_000, 25_000)
 
 
 class OutboxSettings(BaseSettings):
@@ -74,8 +75,9 @@ class OutboxSettings(BaseSettings):
         extra="ignore",
     )
 
-    poll_interval_seconds: float = 1.0
-    batch_size: int = 100
+    poll_interval_seconds: PositiveFloat = 1.0
+    batch_size: PositiveInt = 100
+    max_publish_attempts: PositiveInt = 10
 
 
 class AppSettings(BaseSettings):
@@ -85,7 +87,6 @@ class AppSettings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Environment = Environment.LOCAL
     log_level: LogLevel = LogLevel.INFO
     log_json: bool = False
 
@@ -97,4 +98,5 @@ class AppSettings(BaseSettings):
     outbox: OutboxSettings = Field(default_factory=OutboxSettings)
 
 
+# Значения подтянутся из env_file через model_config
 settings = AppSettings()

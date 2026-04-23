@@ -67,7 +67,7 @@ def configure_logging(level: LogLevel, use_json: bool = False) -> None:
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
 
-    logging.basicConfig(level=level.value, handlers=[handler], force=True)
+    logging.basicConfig(level=level, handlers=[handler], force=True)
 
     for noisy_logger in ("aio_pika", "aiormq", "sqlalchemy.engine"):
         logging.getLogger(noisy_logger).setLevel(logging.WARNING)

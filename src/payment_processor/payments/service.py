@@ -28,14 +28,14 @@ class PaymentService:
         idempotency_key: str,
         data: CreatePaymentRequest,
     ) -> Payment:
-        # Если ключ уже использовался, возвращаем существующий платёж
+        # Ключ уже использовался - возвращаем существующий платёж
         existing = await self._payments.get_by_idempotency_key(idempotency_key)
         if existing is not None:
             if not self._matches_request(existing, data):
                 raise IdempotencyConflictError(idempotency_key)
             return existing
 
-        # Создаём платёж и событие в одной транзакции
+        # Платёж и событие outbox одной транзакцией
         payment = Payment(
             id=uuid4(),
             idempotency_key=idempotency_key,
@@ -65,8 +65,7 @@ class PaymentService:
         try:
             await self._session.commit()
         except IntegrityError as err:
-            # Race condition: между get_by_idempotency_key и commit кто-то
-            # успел вставить платёж с тем же ключом
+            # Race - полагается на UNIQUE(idempotency_key); другие unique-индексы сломают ветку
             await self._session.rollback()
             existing = await self._payments.get_by_idempotency_key(idempotency_key)
             if existing is None:
@@ -75,14 +74,34 @@ class PaymentService:
                 raise IdempotencyConflictError(idempotency_key) from err
             return existing
 
-        await self._session.refresh(payment)
         return payment
 
     async def get_payment(self, payment_id: UUID) -> Payment:
         payment = await self._payments.get_by_id(payment_id)
         if payment is None:
             raise PaymentNotFoundError(payment_id)
+
         return payment
+
+    async def get_status(self, payment_id: UUID) -> PaymentStatus:
+        payment = await self.get_payment(payment_id)
+        return payment.status
+
+    async def mark_processed(
+        self, payment_id: UUID, status: PaymentStatus
+    ) -> PaymentStatus:
+        """Переводит PENDING -> status. Если платёж уже обработан - возвращает
+        его текущий статус без изменений. Транзакцией управляет вызывающий.
+        """
+        payment = await self._payments.get_by_id(payment_id)
+        if payment is None:
+            raise PaymentNotFoundError(payment_id)
+        if payment.status != PaymentStatus.PENDING:
+            return payment.status
+
+        payment.status = status
+        payment.processed_at = utcnow()
+        return status
 
     @staticmethod
     def _matches_request(payment: Payment, data: CreatePaymentRequest) -> bool:

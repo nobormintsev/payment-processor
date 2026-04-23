@@ -18,7 +18,7 @@ class OutboxMessage(Base):
         String(16),
         nullable=False,
         default=OutboxStatus.PENDING,
-        server_default=OutboxStatus.PENDING.value,
+        server_default=OutboxStatus.PENDING,
     )
     attempts: Mapped[int] = mapped_column(
         BigInteger,

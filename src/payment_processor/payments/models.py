@@ -40,7 +40,7 @@ class Payment(Base):
         String(16),
         nullable=False,
         default=PaymentStatus.PENDING,
-        server_default=PaymentStatus.PENDING.value,
+        server_default=PaymentStatus.PENDING,
     )
     webhook_url: Mapped[str] = mapped_column(String(2083), nullable=False)
     created_at: Mapped[datetime] = mapped_column(

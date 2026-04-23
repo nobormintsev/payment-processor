@@ -19,6 +19,8 @@ router = APIRouter(
 )
 
 
+# В prod коде сделал бы responses с полноценными описаниями, что возвращается.
+# Т. к. задание тестовое - опускаю этот момент
 @router.post(
     path="",
     response_model=CreatePaymentResponse,
@@ -43,7 +45,7 @@ async def create_payment(
 
 
 @router.get(
-    path="/payments/{payment_id}",
+    path="/{payment_id}",
     response_model=PaymentResponse,
     summary="Получить платёж",
 )

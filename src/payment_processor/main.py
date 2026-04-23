@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from payment_processor.core.config import settings
 from payment_processor.core.exception_handlers import register_exception_handlers
 from payment_processor.core.logging import configure_logging
+from payment_processor.database.router import router as database_router
 from payment_processor.database.session import dispose_engine
 from payment_processor.payments.router import router as payments_router
 
@@ -22,4 +23,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 register_exception_handlers(app)
+app.include_router(database_router)
 app.include_router(payments_router, prefix="/api/v1")

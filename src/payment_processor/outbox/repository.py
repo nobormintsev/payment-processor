@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from sqlalchemy import select, update
+from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payment_processor.core.time import utcnow
@@ -16,15 +16,21 @@ class OutboxRepository:
         self._session.add(message)
 
     async def acquire_batch_for_publishing(
-        self, batch_size: int
+        self,
+        batch_size: int,
+        max_attempts: int,
     ) -> Sequence[OutboxMessage]:
         stmt = (
             select(OutboxMessage)
-            .where(OutboxMessage.status == OutboxStatus.PENDING)
+            .where(
+                and_(
+                    OutboxMessage.status == OutboxStatus.PENDING,
+                    OutboxMessage.attempts < max_attempts,
+                )
+            )
             .order_by(OutboxMessage.created_at)
             .limit(batch_size)
-            # Поддержка нескольких relay: пропускает записи, заблокированные другими
-            # транзакциями
+            # SKIP LOCKED - безопасно при нескольких параллельных relay
             .with_for_update(skip_locked=True)
         )
         result = await self._session.execute(stmt)
@@ -41,12 +47,26 @@ class OutboxRepository:
         )
         await self._session.execute(stmt)
 
-    async def mark_as_failed(self, message_id: int, error: str, attempts: int) -> None:
+    async def record_publish_failure(
+        self,
+        message_id: int,
+        error: str,
+        attempts: int,
+        max_attempts: int,
+    ) -> None:
+        """Фиксирует неуспешную попытку публикации.
+
+        Переводит сообщение в FAILED только когда исчерпан max_attempts - иначе
+        оставляет PENDING, чтобы релей попробовал снова на следующей итерации.
+        """
+        new_status = (
+            OutboxStatus.FAILED if attempts >= max_attempts else OutboxStatus.PENDING
+        )
         stmt = (
             update(OutboxMessage)
             .where(OutboxMessage.id == message_id)
             .values(
-                status=OutboxStatus.FAILED,
+                status=new_status,
                 last_error=error,
                 attempts=attempts,
             )
