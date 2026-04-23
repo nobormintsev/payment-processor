@@ -27,12 +27,11 @@ packages = [{ include = "payment_processor", from = "src" }]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-dev = [
-    "ruff (>=0.15.11,<0.16.0)",
-    "pre-commit (>=4.5.1,<5.0.0)",
-    "pytest (>=8.3.0,<9.0.0)",
-    "pytest-asyncio (>=0.24.0,<1.0.0)",
-]
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.15.11,<0.16.0"
+pre-commit = ">=4.5.1,<5.0.0"
+pytest = ">=8.3.0,<9.0.0"
+pytest-asyncio = ">=0.24.0,<1.0.0"
 
 [tool.ruff]
 line-length = 88
@@ -79,3 +78,11 @@ combine-as-imports = true
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-m 'not e2e'"
+markers = [
+    "e2e: end-to-end тесты поверх docker compose; запускать через `pytest -m e2e`",
+]
